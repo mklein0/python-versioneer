@@ -26,8 +26,10 @@ def git_versions_from_vcs(tag_prefix, root, verbose=False):
     GITS = ["git"]
     if sys.platform == "win32":
         GITS = ["git.cmd", "git.exe"]
-    stdout = run_command(GITS, ["describe", "--tags", "--dirty", "--always"],
-                         cwd=root)
+    cmdline = ["describe", "--tags", "--dirty", "--always"]
+    if tag_prefix:
+        cmdline.extend(("--match", tag_prefix + "*"))
+    stdout = run_command(GITS, cmdline, cwd=root)
     if stdout is None:
         return {}
     if not stdout.startswith(tag_prefix):
