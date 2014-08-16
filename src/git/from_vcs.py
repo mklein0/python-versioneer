@@ -1,4 +1,17 @@
 
+def git_get_vcs_root(root):
+    # Use command line to look for root of vcs instead
+    # of a manual directory traversal.
+    GITS = ["git"]
+    if sys.platform == "win32":
+        GITS = ["git.cmd", "git.exe"]
+    stdout = run_command(GITS, ["rev-parse", "--show-toplevel"],
+                         cwd=root)
+    if not stdout:
+        # command line was unable to determine root
+        return root
+    return stdout
+
 def git_versions_from_vcs(tag_prefix, root, verbose=False):
     # this runs 'git' from the root of the source tree. This only gets called
     # if the git-archive 'subst' keywords were *not* expanded, and
