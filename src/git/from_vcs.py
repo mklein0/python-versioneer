@@ -14,9 +14,10 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
     expanded, and _version.py hasn't already been rewritten with a short
     version string, meaning we're inside a checked out source tree.
     """
-    if not os.path.exists(os.path.join(root, ".git")):
+    vcs_root = git_get_vcs_root(root)
+    if not os.path.exists(os.path.join(vcs_root, ".git")):
         if verbose:
-            print("no .git in %s" % root)
+            print("no .git in %s" % vcs_root)
         raise NotThisMethod("no .git directory")
 
     GITS = ["git"]
@@ -27,12 +28,12 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
     describe_out = run_command(GITS, ["describe", "--tags", "--dirty",
                                       "--always", "--long",
                                       "--match", "%s*" % tag_prefix],
-                               cwd=root)
+                               cwd=vcs_root)
     # --long was added in git-1.5.5
     if describe_out is None:
         raise NotThisMethod("'git describe' failed")
     describe_out = describe_out.strip()
-    full_out = run_command(GITS, ["rev-parse", "HEAD"], cwd=root)
+    full_out = run_command(GITS, ["rev-parse", "HEAD"], cwd=vcs_root)
     if full_out is None:
         raise NotThisMethod("'git rev-parse' failed")
     full_out = full_out.strip()
@@ -84,8 +85,22 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
         # HEX: no tags
         pieces["closest-tag"] = None
         count_out = run_command(GITS, ["rev-list", "HEAD", "--count"],
-                                cwd=root)
+                                cwd=vcs_root)
         pieces["distance"] = int(count_out)  # total number of commits
 
     return pieces
 
+def git_get_vcs_root(root):
+    """Determine location of .git directory via "git rev-parse" command.
+    """
+    # Use command line to look for root of vcs instead
+    # of a manual directory traversal.
+    GITS = ["git"]
+    if sys.platform == "win32":
+        GITS = ["git.cmd", "git.exe"]
+    stdout = run_command(GITS, ["rev-parse", "--show-toplevel"],
+                         cwd=root)
+    if not stdout:
+        # command line was unable to determine root
+        return root
+    return stdout
