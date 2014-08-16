@@ -20,6 +20,7 @@ def get_versions(default={"version": "unknown", "full": ""}, verbose=False):
     except NameError:
         return default
 
-    return (git_versions_from_vcs(tag_prefix, root, verbose)
+    vcs_root = get_vcs_root(root)
+    return (git_versions_from_vcs(tag_prefix, vcs_root, verbose)
             or versions_from_parentdir(parentdir_prefix, root, verbose)
             or default)

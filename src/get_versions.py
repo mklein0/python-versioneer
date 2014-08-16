@@ -44,8 +44,13 @@ def get_versions(default=DEFAULT, verbose=False):
         return ver
 
     versions_from_vcs_f = vcs_function(VCS, "versions_from_vcs")
+    get_vcs_root_f = vcs_function(VCS, "get_vcs_root")
+    if get_vcs_root_f:
+        vcs_root = get_vcs_root_f(root)
+    else:
+        vcs_root = root
     if versions_from_vcs_f:
-        ver = versions_from_vcs_f(tag_prefix, root, verbose)
+        ver = versions_from_vcs_f(tag_prefix, vcs_root, verbose)
         if ver:
             if verbose: print("got version from VCS %s" % ver)
             return ver
