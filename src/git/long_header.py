@@ -16,4 +16,4 @@ tag_prefix = "%(TAG_PREFIX)s"
 parentdir_prefix = "%(PARENTDIR_PREFIX)s"
 versionfile_source = "%(VERSIONFILE_SOURCE)s"
 
-import os, sys, re, subprocess, errno
+import os, sys, re, subprocess, errno, datetime
