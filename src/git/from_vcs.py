@@ -2,12 +2,23 @@ import os, sys, re # --STRIP DURING BUILD
 def run_command(): pass # --STRIP DURING BUILD
 class NotThisMethod(Exception): pass  # --STRIP DURING BUILD
 
+def get_vcs_root(root):
+    GITS = ["git"]
+    if sys.platform == "win32":
+        GITS = ["git.cmd", "git.exe"]
+    stdout = run_command(GITS, ["rev-parse", "--show-toplevel"],
+                         cwd=root)
+    if stdout is None:
+        return root
+    return stdout
+
 def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
     # this runs 'git' from the root of the source tree. This only gets called
     # if the git-archive 'subst' keywords were *not* expanded, and
     # _version.py hasn't already been rewritten with a short version string,
     # meaning we're inside a checked out source tree.
 
+    root = get_vcs_root(root)
     if not os.path.exists(os.path.join(root, ".git")):
         if verbose:
             print("no .git in %s" % root)
