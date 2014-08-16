@@ -1,15 +1,23 @@
 
 class cmd_version(Command):
     description = "report generated version string"
-    user_options = []
-    boolean_options = []
+    user_options = [
+        ("short", "s",
+            "Provide brief output containing only the version."),
+        ]
+    boolean_options = [
+        "short",
+    ]
     def initialize_options(self):
-        pass
+        self.short = 0
     def finalize_options(self):
         pass
     def run(self):
-        ver = get_version(verbose=True)
-        print("Version is currently: %s" % ver)
+        ver = get_version(verbose=not bool(self.short))
+        if self.short:
+            print(ver)
+        else:
+            print("Version is currently: %s" % ver)
 
 
 class cmd_build(_build):
