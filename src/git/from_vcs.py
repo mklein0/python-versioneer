@@ -29,8 +29,12 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
         GITS = ["git.cmd", "git.exe"]
     # if there is a tag, this yields TAG-NUM-gHEX[-dirty]
     # if there are no tags, this yields HEX[-dirty] (no NUM)
-    describe_out = run_command(GITS, ["describe", "--tags", "--dirty",
-                                      "--always", "--long"],
+    cmdline = [
+        "describe", "--tags", "--dirty", "--always", "--long",
+    ]
+    if tag_prefix:
+        cmdline.append("--match=%s*" % tag_prefix)
+    describe_out = run_command(GITS, cmdline,
                                cwd=root)
     # --long was added in git-1.5.5
     if describe_out is None:
