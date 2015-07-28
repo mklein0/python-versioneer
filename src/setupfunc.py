@@ -127,6 +127,14 @@ def do_setup():
             f.write("include %s\n" % cfg.versionfile_source)
     else:
         print(" versionfile_source already in MANIFEST.in")
+    if cfg.tagfile_source:
+        if cfg.tagfile_source not in simple_includes:
+            print(" appending tagfile_source ('%s') to MANIFEST.in" %
+                cfg.tagfile_source)
+            with open(manifest_in, "a") as f:
+                f.write("include %s\n" % cfg.tagfile_source)
+        else:
+            print(" tagfile_source already in MANIFEST.in")
 
     # Make VCS-specific changes. For git, this means creating/changing
     # .gitattributes to mark _version.py for export-time keyword
