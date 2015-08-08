@@ -20,9 +20,19 @@ def git_pieces_from_vcs(cfg, root, verbose, run_command=run_command):
             print("no .git in %s" % vcs_root)
         raise NotThisMethod("no .git directory")
 
+    # IF tag file configured, check that for version tag.
     if cfg.tagfile_source:
-        return git_pieces_from_tagfile(cfg.tagfile_source, root, vcs_root,
-                                       verbose, run_command)
+        pieces = git_pieces_from_tagfile(cfg.tagfile_source, root, vcs_root,
+                                         verbose, run_command)
+        # If tag prefixes configured, allow them to override tagfile
+        # if more recent.
+        if cfg.tag_prefix:
+            tag_pieces = git_pieces_from_describe(cfg.tag_prefix, vcs_root,
+                                                  verbose, run_command)
+            if (tag_pieces.get('distance') or 0) < (pieces.get('distance') or 0):
+                pieces = tag_pieces
+        return pieces
+
     else:
         return git_pieces_from_describe(cfg.tag_prefix, vcs_root, verbose,
                                         run_command)
@@ -122,49 +132,51 @@ def git_pieces_from_tagfile(tagfile_source, root, vcs_root, verbose,
     GITS = ["git"]
     if sys.platform == "win32":
         GITS = ["git.cmd", "git.exe"]
-    # Look up latest version of tagfile
-    base_version_out = run_command(GITS, ["rev-list", "--max-count=1", "HEAD",
-                                          "--", tagfile_source],
-                               cwd=root)
-    if base_version_out is None:
-        raise NotThisMethod("'git rev-list' tag file failed")
 
-    base_version_out = base_version_out.strip()
+    # Look up version of tagfile which updated tag
+    base_hash_out = run_command(GITS, ["blame", "-L", "1,1",
+                                       tagfile_source],
+                                cwd=root)
+    if base_hash_out is None:
+        raise NotThisMethod("'git blame' tag file failed")
 
-    tagfile_out = run_command(GITS, ["diff-index", "HEAD", tagfile_source],
-                              cwd=root)
-    if tagfile_out is None:
-        raise NotThisMethod("'git diff-index' tagfile failed")
-    tagfile_out = tagfile_out.strip()
+    base_hash_out = base_hash_out.split('\n', 1)[0].split(' ',1)[0]
 
-    full_out = run_command(GITS, ["log", "--max-count=1",
+    # Determine if tagfile is dirty
+    dirty_out = len(base_hash_out)
+    dirty_out = (dirty_out > 0 and "0" * dirty_out == base_hash_out)
+
+    # Determine current commit hash for repo
+    full_hash_out = run_command(GITS, ["log", "--max-count=1",
                                   "--format=format:%H:%h", "HEAD"],
-                        cwd=vcs_root)
-    if full_out is None:
+                           cwd=vcs_root)
+    if full_hash_out is None:
         raise NotThisMethod("'git log' failed")
-    full_out, abbrev_out = full_out.strip().split(':', 1)
+    full_hash_out, abbrev_hash_out = full_hash_out.strip().split(':', 1)
 
-    if tagfile_out:
+    # If dirty, no distance from commit.
+    if dirty_out:
         count_out = 0
-        dirty_out = tagfile_out
 
     else:
+        # Determine distance to tagfile change
         count_out = run_command(GITS, ["rev-list", "--count",
-                                       "%s..HEAD" % base_version_out],
+                                       "%s..HEAD" % base_hash_out],
                                 cwd=vcs_root)
         if count_out is None:
             raise NotThisMethod("'git rev-list' history failed")
 
+        # Determine if repo is dirty
         dirty_out = run_command(GITS, ["diff-index", "HEAD"], cwd=vcs_root)
         if dirty_out is None:
             raise NotThisMethod("'git diff-index' failed")
-        dirty_out = dirty_out.strip()
+        dirty_out = bool(dirty_out.strip())
 
     pieces = {
-        "long": full_out,
-        "short": abbrev_out,
+        "long": full_hash_out,
+        "short": abbrev_hash_out,
         "error": None,
-        "dirty": bool(dirty_out),
+        "dirty": dirty_out,
         "closest-tag": label_out,
         "distance": int(count_out),
     }
