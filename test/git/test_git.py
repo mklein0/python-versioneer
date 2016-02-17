@@ -32,6 +32,8 @@ class ParseGitDescribe(unittest.TestCase):
                 if args[0] == "rev-parse":
                     if do_error == "rev-parse":
                         return None
+                    if args[1] == "--show-toplevel":
+                        return self.fakeroot
                     return "longlong\n"
                 if args[0] == "rev-list":
                     return "42\n"

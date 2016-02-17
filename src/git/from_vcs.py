@@ -14,7 +14,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
     expanded, and _version.py hasn't already been rewritten with a short
     version string, meaning we're inside a checked out source tree.
     """
-    vcs_root = git_get_vcs_root(root, verbose)
+    vcs_root = git_get_vcs_root(root, verbose, run_command=run_command)
 
     GITS = ["git"]
     if sys.platform == "win32":
@@ -86,7 +86,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
 
     return pieces
 
-def git_get_vcs_root(root, verbose):
+def git_get_vcs_root(root, verbose, run_command=run_command):
     """Determine location of .git directory via "git rev-parse" command.
     """
     # Use command line to look for root of vcs instead
