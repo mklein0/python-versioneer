@@ -14,11 +14,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
     expanded, and _version.py hasn't already been rewritten with a short
     version string, meaning we're inside a checked out source tree.
     """
-    vcs_root = git_get_vcs_root(root)
-    if not os.path.exists(os.path.join(vcs_root, ".git")):
-        if verbose:
-            print("no .git in %s" % vcs_root)
-        raise NotThisMethod("no .git directory")
+    vcs_root = git_get_vcs_root(root, verbose)
 
     GITS = ["git"]
     if sys.platform == "win32":
@@ -90,7 +86,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
 
     return pieces
 
-def git_get_vcs_root(root):
+def git_get_vcs_root(root, verbose):
     """Determine location of .git directory via "git rev-parse" command.
     """
     # Use command line to look for root of vcs instead
@@ -102,5 +98,13 @@ def git_get_vcs_root(root):
                          cwd=root)
     if not stdout:
         # command line was unable to determine root
-        return root
-    return stdout
+        vcs_root = root
+    else:
+        vcs_root = stdout
+
+    if not os.path.exists(os.path.join(vcs_root, ".git")):
+        if verbose:
+            print("no .git in %s" % vcs_root)
+        raise NotThisMethod("no .git directory")
+
+    return vcs_root
